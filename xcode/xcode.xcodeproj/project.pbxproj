@@ -26,6 +26,9 @@
 		BA106FB01B4E24DD004C107F /* xcode */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = xcode; sourceTree = BUILT_PRODUCTS_DIR; };
 		BA106FB31B4E24DD004C107F /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
 		BA106FBA1B4E2580004C107F /* Grid.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Grid.h; path = ../../include/Grid.h; sourceTree = "<group>"; };
+		BA29ADD01B51FF5B00949E08 /* Index.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Index.h; path = ../../include/Index.h; sourceTree = "<group>"; };
+		BA9E837E1B5192BB00E8C948 /* Neighborhood.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Neighborhood.h; path = ../../include/Neighborhood.h; sourceTree = "<group>"; };
+		BA9E837F1B51E1A200E8C948 /* Element.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Element.h; path = ../../include/Element.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -59,6 +62,9 @@
 			isa = PBXGroup;
 			children = (
 				BA106FB31B4E24DD004C107F /* main.cpp */,
+				BA29ADD01B51FF5B00949E08 /* Index.h */,
+				BA9E837F1B51E1A200E8C948 /* Element.h */,
+				BA9E837E1B5192BB00E8C948 /* Neighborhood.h */,
 				BA106FBA1B4E2580004C107F /* Grid.h */,
 			);
 			path = xcode;
@@ -249,6 +255,7 @@
 				BA106FB91B4E24DD004C107F /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};

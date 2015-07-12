@@ -1,28 +1,5 @@
 #pragma once
 
-#include <iostream>
-#include <memory>
-#include <assert.h>
-#include <vector>
-#include <stdexcept>
-
-using namespace std;
-
-
-// How are pixels connected?
-enum class CONNECTIVITY
-{
-    VON_NEUMANN = 4,
-    MOORE = 8
-};
-
-
-
-// Relative offsets
-static const long long y_neighbors[]{ 0,-1,0,1,-1,-1,1,1 };
-static const long long x_neighbors[]{ -1,0,1,0,-1,1,1,-1 };
-
-
 // Exception raised when bounds are invalid
 class OutOfBoundsException : public std::exception{
 	virtual const char* what() const throw(){
@@ -31,78 +8,21 @@ class OutOfBoundsException : public std::exception{
 } OutOfBoundsException;
 
 
-// Forward declare Grid to make Element mutual friends
-template<size_t Ysize, size_t Xsize, class DataType, CONNECTIVITY C>
-class Grid;
-
-
-// Represents an element of a 2D grid with a payload of DataType
-template<size_t Ysize, size_t Xsize,class DataType, CONNECTIVITY C>
-class Element{
-
-	friend class Grid<Ysize,Xsize,DataType,C>;
-
-private:
-
-	// ctor - Private: only Grid will create/manage Elements
-    Element(size_t y, size_t x,DataType v,bool exists=true):
-		y(y),x(x),value(v),exists(exists)
-	{
-        neighbors.resize(static_cast<long>(C));
-    }
-    
-public:
-	const bool exists;
-	explicit operator bool() const { return exists; }
-
-	void operator=(const DataType& d) { value = d; }
-	
-    const long long y;
-    const long long x;
-    
-    // Raw Pointers to neighbors
-    std::vector<Element<Ysize, Xsize, DataType, C>*> neighbors;
-    
-    // Return a reference to a neighbor
-    inline Element< Ysize, Xsize, DataType, C >& neighbor(size_t n){
-        return *(neighbors[n]); // Dereference the pointer inside
-    }
-
-	// Return a reference to a neighbor
-	inline Element< Ysize, Xsize, DataType, C>& operator[](size_t n) {
-		return *(neighbors[n])
-	}
-
-	void print() const {
-		if (!exists) {
-			cout <<"[NONE] ";
-		}
-		else{
-			cout <<"[("<<y<<","<<x<<"): " <<value<<"] ";
-		}
-	}
-    
-    DataType value; // The payload
-
-private:
-	template<class T>
-	inline void operator=(T d) {/* Do nothing;*/ }
-};
 
 
 // Represents a two dimensional lattice
-template<size_t Ysize, size_t Xsize, class DataType, CONNECTIVITY C>
+template<size_t Ysize, size_t Xsize, class DataType>
 class Grid
 {
-	friend Element<Ysize, Xsize, DataType, C>;
+	friend Element<Ysize, Xsize, DataType, N>;
 
 public:
     
 	// one 'invalid' object that all neighbor pointers will evaluate to
-	static Element<Ysize, Xsize, DataType, C> NONE;
+	static Element<Ysize, Xsize, DataType> NONE;
 	
     Grid(DataType fill, bool yperiodic, bool xperiodic):
-    X(Xsize), Y(Ysize), y_periodic(yperiodic),x_periodic(xperiodic), conn(C)
+    X(Xsize), Y(Ysize), y_periodic(yperiodic),x_periodic(xperiodic)
     {
         elements.reserve(Y*X);
         
