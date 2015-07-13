@@ -16,17 +16,33 @@ enum class BOUNDARY {
 	PERIODIC,
 };
 
+
+// Dot product of two identically sized arrays
+template<class T,size_t n>
+T dot(const std::array<T,n>& a, const std::array<T,n>& b){
+    T temp(0);
+    for(auto i=0;i!=n;++i){
+        temp += a[i]*b[i];
+    }
+    return temp;
+}
+
+
 // Represents a n-dimensional lattice
 template<class DataType,size_t ndims,class IndexPrecision=long>
 class Grid
 {
 public:
 	friend Element<DataType,ndims,IndexPrecision>;
+    
 	Neighborhood neighborhood;
+    
 	std::vector<Element<DataType,ndims,IndexPrecision>> elements;
+    
 	static const Element<DataType, ndims,IndexPrecision> NONE;
 	
 	const std::array<IndexPrecision, ndims>& dimensions;
+    
 	const std::array<BOUNDARY, ndims>& boundaries;
 
 	// How many elements a single increment represents
@@ -117,8 +133,10 @@ public:
 		// Returns -1 if val is not in range [0,size_of_dim) and the dimension
 		// is not periodic.
 		// Otherwise it just returns bounded val.
-
-		if (val >= size[dim]) {
+        
+        IndexPrecision B(dimensions[dim]);
+        
+		if (val >= B) {
 			if (boundaries[dim]==BOUNDARY::PERIODIC) {
 				return val%B;}
 			else {
@@ -138,27 +156,27 @@ public:
 
 	inline Element<DataType,ndims,IndexPrecision>& bound(Index<ndims,IndexPrecision> idx)
 	{
-		Index<ndims,IndexPrecision> ret();
+        Index<ndims,IndexPrecision> ret({0,0,0});
 		IndexPrecision pos;
 		for (auto dim = 0; dim != ndims; ++dim) {
-			pos = bound_axis(idx[dim],);
+			pos = bound_axis(idx[dim],dim);
 			if (pos == -1) {
 				return NONE;
 			}
 			ret[dim] = pos;
 		}
 
-		return this->operator()()
+        return this->operator()(ret);
 	}
 
-
+    
     // Element setter/getter
     inline const Element<DataType, ndims, IndexPrecision>& operator()(const Index<ndims,IndexPrecision> index) {
 		for (auto i = 0; i != ndims;++i) {
 			// check if we're inside of the bounds
 		}
 
-        return elements[y*X+x];
+        return elements[];
     }
 };
 

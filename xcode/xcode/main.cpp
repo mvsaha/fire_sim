@@ -1,30 +1,33 @@
 #include <iostream>
 #include <vector>
-//#include "Neighborhood.h"
 #include <functional>
 #include <array>
+#include <algorithm>
 
-
-#include "Index.h"
+//#include "Grid.h"
 
 using namespace std;
 
 
+template<class T,size_t n>
+T dot(const std::array<T,n>& a, const std::array<T,n>& b){
+    T temp(0);
+    for(auto i=0;i!=n;++i){
+        temp += a[i]*b[i];
+    }
+    return temp;
+}
+
+
 int main()
 {
-    // 2d interface for a resource managed vector
-    //Grid<2,2,double,CONNECTIVITY::VON_NEUMANN> grid(0.3,false,true);
     
-    const std::array<int,3> ind = {9,2,3};
+    const int ndims(5);
     
-    Index<3,int> i({3,4,1});
-    Index<3,int> i2(ind);
+    std::array<double,5> a{1,2,3,4,5};
+    std::array<double,5> b{1,2,3,4,5};
     
-    i.print();
-    i2.print();
-    
-    
-    cout<<endl<<i[2]<<endl;
+    cout<<dot(a,b)<<endl;
     
     
     cout<<"oh hai thar"<<endl;
