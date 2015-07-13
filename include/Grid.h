@@ -1,5 +1,8 @@
 #pragma once
 
+#include "Element.h"
+
+
 // Exception raised when bounds are invalid
 class OutOfBoundsException : public std::exception{
 	virtual const char* what() const throw(){
@@ -8,39 +11,81 @@ class OutOfBoundsException : public std::exception{
 } OutOfBoundsException;
 
 
+enum class BOUNDARY {
+	NONPERIODIC,
+	PERIODIC,
+};
 
-
-// Represents a two dimensional lattice
-template<size_t Ysize, size_t Xsize, class DataType>
+// Represents a n-dimensional lattice
+template<class DataType,size_t ndims,class IndexPrecision=long>
 class Grid
 {
-	friend Element<Ysize, Xsize, DataType, N>;
-
 public:
-    
-	// one 'invalid' object that all neighbor pointers will evaluate to
-	static Element<Ysize, Xsize, DataType> NONE;
+	friend Element<DataType,ndims,IndexPrecision>;
+	Neighborhood neighborhood;
+	std::vector<Element<DataType,ndims,IndexPrecision>> elements;
+	static const Element<DataType, ndims,IndexPrecision> NONE;
 	
-    Grid(DataType fill, bool yperiodic, bool xperiodic):
-    X(Xsize), Y(Ysize), y_periodic(yperiodic),x_periodic(xperiodic)
+	const std::array<IndexPrecision, ndims>& dimensions;
+	const std::array<BOUNDARY, ndims>& boundaries;
+
+	// How many elements a single increment represents
+	// Column major ordering means that this will be larger for 
+	// smaller dimensions
+	std::array<IndexPrecision,ndims> dim_stride;
+
+    Grid(const std::array<IndexPrecision,ndims>& dimensions,
+		 const std::array<BOUNDARY,ndims>& boundaries,
+		 const Neighborhood& N,DataType fill=0):
+		dimensions(dimensions), boundaries(boundaries), neighborhood(N)
     {
-        elements.reserve(Y*X);
-        
-        // Build elements
-        for (size_t iy=0; iy!=Y;++iy){
-            for (long ix=0;ix!=X;++ix){
+		assert(ndims == dimensions.size()); // Inputs must match
 
-				//TODO: figure out how to emplace_back an Element
-				// while preserving its private ctor
-				Element<Ysize, Xsize, DataType, C> el(iy,ix,fill,true);
-                elements.push_back(el);
-            }
-        }
+		dim_stride[ndims - 1] = 1;
+		for (auto dim = ndims - 2; dim != -1; --dim) {
+			dim_stride[dim] = dim_stride[dim + 1] * dimensions[dim];
+		}
+		elements.reserve(dim_stride[0]*dimensions[0]);
 
+		// Now populate elements
+		Index<ndims, IndexPrecision> idx({ 0,0,0 });
+		bool done = false;
+		
+		while (!done) {
+			elements.push_back(Element<DataType, ndims, IndexPrecision>(idx,fill,neighborhood.n,true));
+
+			for (auto dim = ndims - 1; dim != -1; --dim) {
+				idx[dim] += 1;
+				if (idx[dim] > dimensions[dim] ) {
+					if (dim == 0) {
+						done = true;
+						break;
+					} // if we overflow in dimension 0 then were done
+					idx[dim] = 0; // Else roll over to zero
+					idx[dim - 1] += 1;
+					break;
+				}
+			}
+		}
+		//
+		
 		link_elements();
     }
 
+	void link_elements() {
+		//Loop over elements
+		for (auto e : elements) {
+			
+			//Loop over neighbors
+			for (auto n = 0; n != neighborhood.n; ++n) {
+				// Calculate index after ofset, if its valid (with periodicity)
+				// then assign it
+			}
+		}
+	}
+
 	// Assign neighbors
+	/*
 	void link_elements() {
 		for (long long iy = 0; iy != Y; ++iy) {
 			for (long long ix = 0; ix != X; ++ix) {
@@ -65,20 +110,22 @@ public:
 				cout << endl;
 			}
 		}
-	}
+	}*/
 
 	
-	inline const long bound_axis(long val, long B, bool roll) const {
-		// Returns -1 if not in range [0,B) and roll is false
-		// Otherwise returns bounded value.
-		if (val >= B) {
-			if (roll) {
+	inline const IndexPrecision bound_axis(IndexPrecision val, int dim) const {
+		// Returns -1 if val is not in range [0,size_of_dim) and the dimension
+		// is not periodic.
+		// Otherwise it just returns bounded val.
+
+		if (val >= size[dim]) {
+			if (boundaries[dim]==BOUNDARY::PERIODIC) {
 				return val%B;}
 			else {
 				return -1;}
 		}
 		else if (val < 0) {
-			if (roll) {
+			if (boundaries[dim]==BOUNDARY::PERIODIC) {
 				val *= -1; // val must be positive now
 				return B - (val%B);
 			}
@@ -89,44 +136,35 @@ public:
 	}
 
 
-	inline Element<Ysize,Xsize,DataType,C>& bound(long y, long x) {
-		auto _y = bound_axis(y, Y, y_periodic);
-		auto _x = bound_axis(x, X, x_periodic);
-		if (_y >= 0 && _x >= 0) {
-			return this->operator()(_y, _x);}
-		else {
-			return NONE;}
+	inline Element<DataType,ndims,IndexPrecision>& bound(Index<ndims,IndexPrecision> idx)
+	{
+		Index<ndims,IndexPrecision> ret();
+		IndexPrecision pos;
+		for (auto dim = 0; dim != ndims; ++dim) {
+			pos = bound_axis(idx[dim],);
+			if (pos == -1) {
+				return NONE;
+			}
+			ret[dim] = pos;
+		}
+
+		return this->operator()()
 	}
 
 
-	// Properties (derived, probably could get rid of these and cast from)
-    const CONNECTIVITY conn;
-    const size_t Y;
-    const size_t X;
-    
-
     // Element setter/getter
-    inline Element<Ysize,Xsize,DataType,C>& operator()(size_t y,size_t x) {
-        if ( y>=Y || y<0 || x>=X || x<0 ) {
-            throw OutOfBoundsException;
-        }
+    inline const Element<DataType, ndims, IndexPrecision>& operator()(const Index<ndims,IndexPrecision> index) {
+		for (auto i = 0; i != ndims;++i) {
+			// check if we're inside of the bounds
+		}
+
         return elements[y*X+x];
     }
-    
-
-	const bool y_periodic;
-	const bool x_periodic;
-	
-private:
-
-    // Data
-    std::vector<Element<Ysize,Xsize,DataType,C>> elements;
-    
 };
 
 
 // Initialize the NONE type
-template<size_t Ysize, size_t Xsize, class DataType, CONNECTIVITY C>
-Element<Ysize,Xsize,DataType,C> Grid<Ysize, Xsize, DataType, C>::NONE = Element<Ysize, Xsize, DataType, C>(-1,-1,0,false);
+template<class DataType, size_t ndims, class IndexPrecision>
+Element<DataType, ndims, IndexPrecision> Grid<DataType,ndims,IndexPrecision>::NONE = Element<DataType, ndims, IndexPrecision>(-1,-1,0,false);
 
 

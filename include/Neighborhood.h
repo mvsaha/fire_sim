@@ -7,13 +7,6 @@
 
 using namespace std;
 
-// Exception raised when axes don't align but should
-class AlignmentException : public std::exception{
-    virtual const char* what() const throw(){
-        return "Axes are not aligned.";
-    }
-} AlignmentException;
-
 
 // Neigbors define adjecency in the Grid
 class Neighborhood{
@@ -23,7 +16,7 @@ public:
     {
         for(auto dim_offsets:offsets){
             if (dim_offsets.size() != n){
-                throw AlignmentException;
+                throw exception();
             }
         }
     }

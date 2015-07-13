@@ -1,54 +1,52 @@
 #pragma once
-
-// Element must know
-// Index[n] should have a value that is the
-
-
+#include "Neighborhood.h"
+#include "Index.h"
 
 
 // Forward declare Grid to make Element mutual friends
 //template<size_t ndims, class DataType>
 //class Grid;
 
-
 // Represents an element of a 2D grid with a payload of DataType
-template<class DataType, Neighborhood& N, size_t ndims, class IndexPrecision>
+template<class DataType, size_t ndims, class IndexPrecision>
 class Element
 {
-    
-    //friend class Grid<Ysize,Xsize,DataType>;
-    
 public:
-    
+
     // ctor - Private: only Grid will create/manage Elements
-    Element(size_t y, size_t ix, DataType v):
-        y(y), x(x), value(v), exists(exists), neighbors(ndims)
-    {
-        
-    }
+	Element(const Index<ndims, IndexPrecision>& index,
+		const DataType& v,
+		size_t n_neighbors,
+		bool exists) :
+		_index(index), value(v), exists(exists), neighbors(n_neighbors) { }
+
+	Element(const Element<DataType, ndims, IndexPrecision>& e):
+		_index(e._index),value(e.value),exists(e.exists),neighbors(e.neighbors.size())
+	{ }
+	
+	// Location of Element
+	const Index<ndims, IndexPrecision> _index;
+
+
+	// Raw pointers to neighbors
+	std::vector<Element<DataType, ndims, IndexPrecision>*> neighbors;
+
+	const Index<ndims, IndexPrecision>& index() { return _index; }
+	DataType value; // The payload
+
+    const bool exists;
+    explicit operator bool() const { return exists; }
     
-    const Neighborhood& _neighborhood;
     
-public:
-    const bool exists; // Is this a valid Element, or will it exist as a dummy NONE element?
-    explicit operator bool() const { return exists; } // Same thing as exists.
-    
-    // Change the value by directly assigning to it
-    void operator=(const DataType& d) { value = d; }
-    
-    //
-    const Index<ndims,IndexPrecision> index;
-    
-    // Raw Pointers to neighbors
-    std::vector<Element<Ysize, Xsize, DataType, C>*> neighbors;
+    void operator=(const DataType& newvalue) { value = newvalue; }
     
     // Return a reference to a neighbor
-    inline Element< Ysize, Xsize, DataType, C >& neighbor(size_t n){
+    inline const Element<DataType, ndims, IndexPrecision>& neighbor(size_t n) const{
         return *(neighbors[n]); // Dereference the pointer inside
     }
     
     // Return a reference to a neighbor
-    inline Element< Ysize, Xsize, DataType, C>& operator[](size_t n) {
+    inline const Element<DataType, ndims, IndexPrecision>& operator[](size_t n) const {
         return *(neighbors[n]);
     }
     
@@ -57,13 +55,9 @@ public:
             cout <<"[NONE] ";
         }
         else{
-            cout <<"[("<<y<<","<<x<<"): " <<value<<"] ";
-        }
+			cout << "[";
+			_index.print();
+			cout << ": " << value << "]";
+		}
     }
-    
-    DataType value; // The payload
-    
-private:
-    template<class T>
-    inline void operator=(T d) {/* Do nothing;*/ }
 };

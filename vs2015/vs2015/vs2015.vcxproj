@@ -121,7 +121,10 @@
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\include\Element.h" />
     <ClInclude Include="..\..\include\Grid.h" />
+    <ClInclude Include="..\..\include\Index.h" />
+    <ClInclude Include="..\..\include\Neighborhood.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

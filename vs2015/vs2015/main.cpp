@@ -1,37 +1,31 @@
 #include <iostream>
+//#include "Index.h"
+
+#include "Element.h"
 #include "Grid.h"
+
+#include <array>
 
 using namespace std;
 
 int main(int argc, const char * argv[])
 {
-	// 2D Lattice
-	Grid<5, 5, double, CONNECTIVITY::VON_NEUMANN> grid(0.333f, true, true);
-	/*
-	//cout << grid.elements.size() << endl;
-	cout << grid(1, 0).value << endl;
+	std::array<long, 3> arr={ 1,2,3 };
 
-	auto el = grid.NONE;
+	const int ndims(3);
+	Index<ndims> i(arr);
+	Index<ndims> j({ -1,-3,-5});
 
-	cout << el.value << endl;
-	cout << el.y << " " << el.x << endl;
-	cout << bool(el) << endl;
-	*/
-	
-	cout << endl;
-	auto e = grid(0, 4);
+	auto v = 9899.3124;
 
-	cin.ignore();
-	e.print();
-	auto n = e.neighbor();
-	
-	if (!n) {
-		cout << "none" << endl;
-	}
-	else {
-		n.print();
-	}
-	
+	Element<double,ndims,long> e(i, v, MooreNeighborhood.n, true);
+	Element<double, ndims, long> e_(i, v, MooreNeighborhood.n, false);
 
+	std::array<long, ndims> dimensions{2,3,2};
+	std::array<BOUNDARY, ndims> boundaries{ BOUNDARY::PERIODIC,BOUNDARY::PERIODIC,BOUNDARY::PERIODIC };
+
+	Grid<double, ndims, long> grid(dimensions, boundaries, MooreNeighborhood, 0.2233);
+
+	cout << grid.elements.size() << endl;
 	cin.ignore();
 }
