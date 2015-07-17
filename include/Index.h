@@ -12,37 +12,33 @@ class DimensionException : public std::exception{
 } AlignmentException;
 
 
-template<size_t ndims, class IndexPrecision=long>
+template<size_t ndims, class IndexPrecision>
 class Index
 {
 public:
-
+    
+    //---------------------------------------Constructors--------------------------------------
 	// Fill with default indices
 	Index() { }
 
-	// With
+	// Fill with an array
 	Index(const std::array<IndexPrecision, ndims>& indices) :
 		indices(indices) {}
 
-	// Cross your fingers with this one
+	// With an initializer list
 	Index(std::initializer_list<IndexPrecision> inds): indices(inds) {}
     
+    // With a single value for all fields
 	Index(const IndexPrecision& val) {
 		std::fill_n(indices.begin(), ndims, val);
 	}
 
-	// From another index
-	//Index(const Index& other):
-	//	indices(other.indices) {}
     
-	// Move construct from an rvalue reference
-	//Index(const Index& other) :
-	//	indices(other.indices) { }
-
-    // Data
+    //---------------------------------------Properties----------------------------------------
     std::array<IndexPrecision,ndims> indices;
     
-    // Accessors
+    
+    //---------------------------------------Accessors-----------------------------------------
     //const:
     const IndexPrecision& operator[](const size_t& dim) const {
         return indices[dim];
@@ -53,7 +49,8 @@ public:
         return indices[dim];
     }
     
-    // display
+    
+    //---------------------------------------Display-------------------------------------------
 	void print() const {
 		std::cout << "(";
 		for (auto i = 0; i != ndims; ++i) {

@@ -3,14 +3,6 @@
 #include "Element.h"
 
 
-// Exception raised when bounds are invalid
-class OutOfBoundsException : public std::exception{
-	virtual const char* what() const throw(){
-		return "Index exceeded Grid Size.";
-	}
-} OutOfBoundsException;
-
-
 enum class BOUNDARY {
 	NONPERIODIC,
 	PERIODIC,
@@ -28,7 +20,7 @@ inline T dot(const std::array<T,n>& a, const std::array<T,n>& b){
     return temp;
 }
 
-// Dot product of two identically sized arrays
+/*// Dot product of two identically sized arrays
 template<class T, size_t n>
 inline T dot(const std::initializer_list<T>& a, const std::array<T, n>& b) {
 	// Templated function for numerical types 
@@ -37,7 +29,7 @@ inline T dot(const std::initializer_list<T>& a, const std::array<T, n>& b) {
 		temp += a[i] * b[i];
 	}
 	return temp;
-}
+}*/
 
 // Represents a n-dimensional lattice
 template<class DataType,size_t ndims, size_t n_neighbors, class IndexPrecision>
@@ -77,7 +69,7 @@ public:
 		chrono::time_point<std::chrono::high_resolution_clock> t_start, t_end;
 		t_start = std::chrono::high_resolution_clock::now();
 
-		populate_elements(fill); // Heavy lifting...
+		populate_elements(fill); // Heavy lifting (most of the time is spent extending the vectors)...
 		link_elements();
 
 		t_end = std::chrono::high_resolution_clock::now();
