@@ -16,26 +16,28 @@ template<size_t ndims, class IndexPrecision=long>
 class Index
 {
 public:
-    
+
 	// Fill with default indices
 	Index() { }
 
-    // ctor
-    Index(const std::array<IndexPrecision,ndims>& indices):
-        indices(indices){}
+	// With
+	Index(const std::array<IndexPrecision, ndims>& indices) :
+		indices(indices) {}
 
 	// Cross your fingers with this one
-	template<class UnknownList>
-	Index(UnknownList& ul):
-		indices{ ul } {}
+	Index(std::initializer_list<IndexPrecision> inds): indices(inds) {}
     
+	Index(const IndexPrecision& val) {
+		std::fill_n(indices.begin(), ndims, val);
+	}
+
 	// From another index
-	Index(const Index& other):
-		indices(other.indices) {}
+	//Index(const Index& other):
+	//	indices(other.indices) {}
     
 	// Move construct from an rvalue reference
-	Index(const Index&& other) :
-		indices(other.indices) { }
+	//Index(const Index& other) :
+	//	indices(other.indices) { }
 
     // Data
     std::array<IndexPrecision,ndims> indices;
@@ -52,17 +54,17 @@ public:
     }
     
     // display
-    void print() const {
-        std::cout<<"(";
-        for(auto i=0;i!=ndims;++i){
+	void print() const {
+		std::cout << "(";
+		for (auto i = 0; i != ndims; ++i) {
 			if (i > 0) {
 				std::cout << "," << indices[i];
 			}
 			else {
 				std::cout << indices[i];
 			}
-        }
-        std::cout<<" )";
-    }
+		}
+		std::cout << ")";
+	}
     
 };

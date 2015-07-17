@@ -8,30 +8,31 @@
 //class Grid;
 
 // Represents an element of a 2D grid with a payload of DataType
-template<class DataType, size_t ndims, class IndexPrecision>
+template<class DataType, size_t ndims, size_t n_neighbors, class IndexPrecision>
 class Element
 {
 public:
 
-    // ctor - Private: only Grid will create/manage Elements
-	Element(const Index<ndims, IndexPrecision>& index,
+	Element(const Index<ndims,IndexPrecision>& index,
 		const DataType& v,
-		size_t n_neighbors,
 		bool exists) :
-		_index(index), value(v), exists(exists), neighbors(n_neighbors) { }
+		index(index), value(v), exists(exists) { }
 
-	Element(const Element<DataType, ndims, IndexPrecision>& e):
-		_index(e._index),value(e.value),exists(e.exists),neighbors(e.neighbors.size())
-	{ }
-	
+
+    // Create Element from value
+	Element(const Index<ndims,IndexPrecision>& index,
+		const DataType& v,
+		bool exists,
+		const Neighborhood<n_neighbors>& neighborhood) :
+	index(index), value(v), exists(exists), neighbors(neighborhood.n) { }
+
 	// Location of Element
-	const Index<ndims, IndexPrecision> _index;
-
+	const Index<ndims, IndexPrecision> index;
 
 	// Raw pointers to neighbors
-	std::vector<Element<DataType, ndims, IndexPrecision>*> neighbors;
+	std::vector<Element<DataType, ndims, n_neighbors, IndexPrecision>*> neighbors;
 
-	const Index<ndims, IndexPrecision>& index() { return _index; }
+	const Index<ndims, IndexPrecision>& i() { return index; }
 	DataType value; // The payload
 
     const bool exists;
@@ -41,12 +42,12 @@ public:
     void operator=(const DataType& newvalue) { value = newvalue; }
     
     // Return a reference to a neighbor
-    inline const Element<DataType, ndims, IndexPrecision>& neighbor(size_t n) const{
+    inline const Element<DataType, ndims, n_neighbors, IndexPrecision>& neighbor(size_t n) const{
         return *(neighbors[n]); // Dereference the pointer inside
     }
     
     // Return a reference to a neighbor
-    inline const Element<DataType, ndims, IndexPrecision>& operator[](size_t n) const {
+    inline const Element<DataType, ndims, n_neighbors, IndexPrecision>& operator[](size_t n) const {
         return *(neighbors[n]);
     }
     
@@ -56,8 +57,12 @@ public:
         }
         else{
 			cout << "[";
-			_index.print();
+			index.print();
 			cout << ": " << value << "]";
 		}
     }
+
+	operator DataType() const {
+		return value;
+	}
 };
