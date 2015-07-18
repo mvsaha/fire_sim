@@ -17,40 +17,51 @@ class Index
 {
 public:
     
-    //---------------------------------------Constructors--------------------------------------
+	//========================================================
+	//                      Constructors
+	//========================================================
+
 	// Fill with default indices
 	Index() { }
 
 	// Fill with an array
 	Index(const std::array<IndexPrecision, ndims>& indices) :
 		indices(indices) {}
-
-	// With an initializer list
-	Index(std::initializer_list<IndexPrecision> inds): indices(inds) {}
     
     // With a single value for all fields
 	Index(const IndexPrecision& val) {
 		std::fill_n(indices.begin(), ndims, val);
 	}
 
+	template<class ...I>
+	Index(IndexPrecision ind1, I&&... inds) noexcept :
+	indices{ ind1 ,std::forward<I>(inds)... } {
+		static_assert(sizeof...(I) == (ndims - 1), "Not the right number of indices");
+	}
     
-    //---------------------------------------Properties----------------------------------------
+	//========================================================
+	//                      Properties
+	//========================================================
     std::array<IndexPrecision,ndims> indices;
     
     
-    //---------------------------------------Accessors-----------------------------------------
-    //const:
+	//========================================================
+	//                      Accessors
+	//========================================================
+    //const
     const IndexPrecision& operator[](const size_t& dim) const {
         return indices[dim];
     }
     
-    // non-const:
+    // non-const
     IndexPrecision& operator[](const size_t& dim){
         return indices[dim];
     }
     
     
-    //---------------------------------------Display-------------------------------------------
+	//========================================================
+	//                      Display
+	//========================================================
 	void print() const {
 		std::cout << "(";
 		for (auto i = 0; i != ndims; ++i) {

@@ -1,26 +1,34 @@
 #include <iostream>
-#include "Grid.h"
-
 #include <string>
 #include <array>
 
-#include <chrono>
-
 using namespace std;
+
+#include "Neighborhood.h"
+#include "Grid.h"
+
+
+
 
 int main(int argc, const char * argv[])
 {
-	const int ndims = 2;
+	const int n_dimensions = 2;
+	const int n_neighbors =  4;
 
-	std::array<long, ndims> dimensions{1000,1000};
-	std::array<BOUNDARY, ndims> boundaries{ BOUNDARY::PERIODIC,BOUNDARY::PERIODIC};
+	std::array<long,n_dimensions> dimensions{ 3,4 };
+	std::array<BOUNDARY, n_dimensions> boundaries{ BOUNDARY::PERIODIC, BOUNDARY::NONPERIODIC };
+	Grid<double, n_dimensions, n_neighbors, long> grid(dimensions, boundaries, VonNeumannNeighborhood, 0);
 
-	Grid<double, ndims, 0, long> grid(dimensions, boundaries, LonelyNeighborhood, 0.0);
-	//Grid<double, ndims, 4, long> grid(dimensions, boundaries, MooreNeighborhood, 0.0);
+	grid(2, 1) = 213;
 
-	grid(1202) = 23.0;
-
-	cout << grid(1201) << " " << grid(1202) << " " << grid(1203) << endl;
-
+	auto i = grid(0, 0).i();
+	for (auto y = 0; y != dimensions[0]; ++y) {
+		for (auto x = 0; x != dimensions[1]; ++x) {
+			auto& e = grid(y, x);
+			e.print();
+		}
+		cout << endl;
+	}
+	//e.print();
 	cin.ignore();
 }
