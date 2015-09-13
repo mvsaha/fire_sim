@@ -4,6 +4,7 @@ sys.dont_write_bytecode = True
 import numpy as np
 from numba import jit
 
+
 def dims2stride(dims):
     '''Return the stride of an n-dimensional array.
 
@@ -23,6 +24,7 @@ def dims2stride(dims):
         stride[i] = s
         s *= dims[i]
     return stride
+
 
 @jit(nopython=True)
 def ind2sub(i,stride,sub):
@@ -47,6 +49,7 @@ def ind2sub(i,stride,sub):
         sub[d] = i/stride[d]
         i -= sub[d]*stride[d]
 
+
 @jit(nopython=True)
 def update_idx( idx, shp, ndims):
     '''Iterate one step over a multidimensional index.'''
@@ -57,6 +60,7 @@ def update_idx( idx, shp, ndims):
             continue
         else:
             return
+
 
 def indices(mat):
     '''Generate for indices over a numpy array.'''
