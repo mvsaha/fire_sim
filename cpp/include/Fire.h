@@ -39,7 +39,7 @@ public:
    bool iterate();
    
    // Burn a single pixel and release energy to neighboring pixels.
-   std::vector<long> burn_pixel(long pixel);
+   std::vector<long> burn_pixel(long pixel,double energy_released);
    
    // Number of pixels that are currently on fire
    inline long n_active_fires() const {return active_burns.size();}

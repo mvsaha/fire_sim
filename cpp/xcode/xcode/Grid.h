@@ -10,46 +10,57 @@ public:
    //===========================================//
    Grid(int y,int x);
    
+   
    //===========================================//
    //               PROPERTIES                  //
    //===========================================//
    std::vector<T> data;
-   int y;
-   int x;
-   
-   //===========================================//
-   //               METHODS                     //
-   //===========================================//
-   void ind2sub(long i, int* y, int*  x);
-   void sub2ind(int  y,  int x, long* i);
+   const int ysize;
+   const int xsize;
    
    //===========================================//
    //               INLINE METHODS              //
    //===========================================//
    
+   // Convert a linear index to y,x coordinates
+   inline void ind2sub(const long i, int* y, int* x){
+      *y = int(i/xsize);
+      *x = int(i - ((*y) * ysize));
+      return;
+   }
+   
+   // Convert y,x coordinates to a linear index
+   inline long sub2ind(const int y, const int x){
+      return (y*xsize) + x;
+   }
+   
+   // Convert y,x coordinates to a linear index
+   inline void sub2ind(const int y, const int x, long* i){
+      *i = (y*xsize) + x;
+      return;
+   }
+   
    // Retrieve data at linear index.
-   inline const& T operator () (long i)
-   {
+   inline const T& operator()(long i) const{
       return data[i];
+   };
+   
+   // Retrieve the pointer to the address of a given linear index
+   inline T* ptr(long i){
+      return &(data[i]);
    }
    
    // Retrieve data at subscripted index.
-   inline const& T operator () (int y, int x)
-   {
-      return data
+   inline const T& operator() (int y, int x) const{
+      long i;
+      sub2ind(y,x,&i);
+      return data[i];
    }
 };
 
-void Grid::ind2sub(const long i, int* y, int* x)
+template<class T>
+Grid<T>::Grid(int y,int x):
+xsize(x),ysize(y)
 {
-   *y = i/self.x;
-   *x = i - ((*y) * self.y);
-   return
+   //
 }
-
-void Grid::sub2ind(const int y, const int x, long* i)
-{
-   *i = (y*self.x) + x;
-   return
-}
-
