@@ -8,25 +8,28 @@ int main(int argc, const char * argv[]) {
    
    const int y = 10;
    const int x = 10;
+   
    Grid<char> landscape(y,x);
-   Grid<double> accum_energy(y,x);
+   Grid<double> activation_energy(y,x);
+   Grid<double> released_energy(y,x);
+   Grid<double> accumulated_energy(y,x);
    
+   Fire fire(landscape,
+             activation_energy,
+             released_energy,
+             accumulated_energy,
+             {10,2,16},
+             4);
    
-   Fire fire(landscape,accum_energy,{10,2,16},4);
+   long i = 10;
    
-   long i;
-   landscape.sub2ind(10, 0, &i);
+   cout << activation_energy[i] <<endl;
+   activation_energy[i] = 99;
+   cout << activation_energy[i] <<endl;
    
-   vector<double> v{0.01,34,99};
-   
-   
-   double* pv = v.data();
-   
-   cout<<pv<<endl;
-   cout<<v[0]<<endl;
-   cout<<*pv<<endl;
-   cout<<*++pv<<endl;
-   cout<<*++pv<<endl;
+   int ix,iy;
+   landscape.ind2sub(i, &iy, &ix);
+   cout<< activation_energy(iy,ix)<<endl;
    
    return 0;
 }
