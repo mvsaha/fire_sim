@@ -25,6 +25,13 @@ def dims2stride(dims):
         s *= dims[i]
     return stride
 
+@jit(nopython=True)
+def sub2ind(sub,stride):
+    """Convert a subscripted index into a linear index."""
+    total = 0
+    for i in range(sub.size):
+        total += sub[i]*stride[i]
+    return total
 
 @jit(nopython=True)
 def ind2sub(i,stride,sub):
@@ -33,16 +40,15 @@ def ind2sub(i,stride,sub):
     [PARAMETERS]
     i - int
         The index to be converted
-
+    
     stride - numpy.array(int) with n elements
         The stride of each axis (see dims2stride)s
-
-    sub - numpy.array(int) with n elements
+    
+    sub* - numpy.array(int) with n elements
         The output subscripts where the result will be stored.
-
+    
     [NOTES]
-    This function does not bounds check. If i is greater than the number
-    of elements in the matrix described by stride no error will be thrown.
+    This function does not bounds check.
     '''
     ndims = stride.shape[0]
     for d in range(0,ndims):
