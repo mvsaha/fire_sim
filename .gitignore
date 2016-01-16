@@ -10,6 +10,12 @@
 # Executables
 *.exe
 
+# PYCHARM FILES
+.idea
+.idea/
+.idea*
+
+
 # Build results
 [Dd]ebug/
 [Dd]ebugPublic/
