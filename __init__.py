@@ -112,7 +112,6 @@ def find_kernel_denominator():
     return total
 
 _KERNEL_DENOMINATOR_ = find_kernel_denominator()  # Calc done on library import
-#print(_KERNEL_DENOMINATOR_)
 
 
 @numba.jit(nopython=True)
@@ -125,7 +124,7 @@ def burn_next_active_pixel(fires,active,L,E,A,R,F):
             2-tuple of y and x coordinates of active or past fires
         active - tuple(ints)
             (start,end] coordinates of the currently burning fires
-        L,E,A,R,F - Environmental fields.
+        L,E,A,R,F - Environmental fields (see Variable Descriptions).
     """
     Y, X = E.shape
     y, x = fires[0][active[0]], fires[1][active[0]]
@@ -150,6 +149,7 @@ def burn_next_active_pixel(fires,active,L,E,A,R,F):
                 fires[1][active[1]] = ix
                 F[iy,ix] = fire_time_step + 1
                 active[1] += 1
+    
     active[0] += 1  # Set the next pixel as 'next'
     return True
 
