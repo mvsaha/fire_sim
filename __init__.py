@@ -12,51 +12,53 @@ BARE = 0
 INFLAMMABLE = 0
 UNBURNED = 0
 
-
-def fill_L(n_biomes, B, p, L):
+def fill_L(B, p, L):
     """Fill a LandCover (L) map from a Biome map (B).
     
-    [PARAMETERS]
-    n_biomes - int:
-        The number of biomes in the simulation.
-    
-    B - 2d numpy.ndarray(int)
-        Spatial grid of Biome classes for each pixel.
-    
-    p - tuple(tuple(int))
-        The proportion of different landcover classes within each Biome.
-        p[b][l] is the proportion of Biome 'b' that is made up of landcover
-        component 'l'. Req.: len(p) == biomes and 
+    Arguments:
+        B - 2d numpy.ndarray(int)
+            Spatial grid of Biome classes for each pixel.
         
-    L* - 2d numpy.ndarray(int)
-        Land cover drawn from the distributions in t corresponding to each
-        Biome type. Identical in shape to B.
+        p - tuple(tuple(int))
+            The proportion of different landcover classes within each Biome.
+            p[b][l] is the proportion of Biome 'b' that is made up of
+            landcover component l. The length of p should be equal to the
+            number of biomes. The length of each *element* of p should be 
+            equal to the number of distinct landcover classes.
+
+        L* - 2d numpy.ndarray(int)
+            Land cover drawn from the distributions in t corresponding to each
+            Biome type. Must be identical in shape to B.
     """
-    for biome in range(n_biomes):
+    assert B.shape == L.shape
+    for biome in range(len(p)):
         proportions = p[biome] # Proportion of each land cover class in this biome
         y,x = np.where(B==biome)
         L[y,x] = np.random.choice(len(proportions),y.size,p=proportions)
 
 
-def fill_A(n_covers, L, rngs, A):
+def fill_A(L, rngs, A):
     """Fill the Activation Energy map (A) with randomly generated values.
     
-    [PARAMETERS]
-    L - 2d numpy.ndarray(int)
-        2d map of andcover component type (e.g. bare, grass, etc.)
+    Arguments:
+        N_COVERS - int
+            The number of landcover types in the simulation.
         
-    rngs - dict(key=int,value=callable)
-        A dict of callable objects (e.g. functions). There should be one
-        entry in the dictionary for each landcover component class. The 
-        dictionary contains callables that takes an integer n and
-        returns a 1 dimensional numpy.ndarray(float) that has size n and 
-        contains random values.
-    
-    A* - 2d numpy.ndarray(int)
-        The array to be filled with random activation energies based
-        on the land cover component.
+        L - 2d numpy.ndarray(int)
+            2d map of andcover component type (e.g. bare, grass, etc.)
+
+        rngs - tuple(callables)
+            A sequence of callable objects (e.g. functions). There should
+            be one entry in rngs for each landcover component class. Each
+            callable rngs[l] in rngs should take one parameter, an int n,
+            and return n random values of A corresponding to the
+            landcover l.
+
+        A* - 2d numpy.ndarray(int)
+            The array to be filled with random activation energies based
+            on the land cover component.
     """
-    for lc in range(n_covers):
+    for lc in range(N_COVERS):
         y,x = np.where(L==lc)
         if len(y):
             A[y,x] = rngs[lc](y.size)
@@ -65,22 +67,23 @@ def fill_A(n_covers, L, rngs, A):
 def fill_R(n_covers, L, rngs, R):
     """Fill the Release Energy map (R) with randomly generated values.
     
-    [PARAMETERS]
-    n_covers - int
-        Max number of unique cover classes in L
-    
-    L - 2d numpy.ndarray(int)
-        Map of landcover component type (e.g. bare, grass, etc.)
-    
-    rngs - tuple(one parameter callables) of len(n_covers)
-        A sequence of callable objects (e.g. functions). There should
-        be one entry in rngs for each landcover component class. Each
-        callable in rngs should take one parameter, an int n, and should
-        generate n random values corresponding to the land cover class.
+    Arguments:
+        N_COVERS - int
+            The number of landcover types in the simulation.
         
-    R* - 2d numpy.ndarray(int)
-        The array to be filled with random release energies based
-        on the land cover component and the distribution.
+        L - 2d numpy.ndarray(int)
+            2d map of andcover component type (e.g. bare, grass, etc.)
+
+        rngs - tuple(callables)
+            A sequence of callable objects (e.g. functions). There should
+            be one entry in rngs for each landcover component class. Each
+            callable rngs[l] in rngs should take one parameter, an int n,
+            and return n random values of R corresponding to the
+            landcover l.
+
+        A* - 2d numpy.ndarray(int)
+            The array to be filled with random activation energies based
+            on the land cover component.
     """
     fill_A(n_covers,L,rngs,R)  # Same functionality as fill_A
 
@@ -135,7 +138,8 @@ def burn_next_active_pixel(fires, active, L, E, A, R, F):
         for ix in range(x-_MAX_KERNEL_RADIUS_,x+_MAX_KERNEL_RADIUS_+1):
             
             # Bounds checking (or if this pixel has already been burned)
-            if ix < 0 or ix >= X or (y == iy and x == ix) or (L[iy,ix] == 0) or F[iy,ix]:
+            if (ix < 0 or ix >= X or (y == iy and x == ix) or
+                 (L[iy,ix] == 0) or F[iy,ix]):
                 continue
             
             # If we're inside of max radius
@@ -210,20 +214,19 @@ def ignite_fires(ignitions, fires, active, L, F):
     return n_actual
 
 
-def fire_map_to_list(L,F):
-    """Given a map of fires, build a list of fires and a active."""
-    fires = np.zeros(shape=(F.size),dtype=int), np.zeros(shape=(F.size),dtype=int)
-    F[L == BARE] = False # Cannot light bare ground
-    y,x = np.where(F)
-    N = y.size
-    fires[:N,0] = y
-    fires[:N,1] = x
-    cursor = np.array([0,N])
-    F[:] = False
-    return fires, cursor
+def fire_map_to_list(F, L):
+    """Given F, build a list of fire eligible (based on L) fires.
+    Fires that coincide with 0's in L are ineligible due to
+    inflammability.
+    """
+    fires = np.where(F)
+    eligible = (L[fires]).astype(bool)
+    
+    fires = fires[0][eligible], fires[1][eligible]
+    active = np.array(len(fires[0]), dtype=int)
+    return fires, active
 
-
-def parameterize_truncate_distribution(distr,p1,p2):
+def parameterize_distr(distr,p1,p2):
     """Parameterize a two-parameter distribution.
     
     Returns a parameterized distribution that takes one parameter:
@@ -255,7 +258,7 @@ def visualize(fig, B, L, E, A, R, F, biome_labels=None, landcover_labels=None):
         cbar=ax.colorbar(img, orientation='horizontal',
                       ticks=[i for i in range(len(landcover_labels))])
         cbar.ax.set_xticklabels(landcover_labels)
-
+    
     fig.add_subplot(233)
     not_nan = np.isfinite(A)
     pct = np.percentile(A[not_nan],99)
