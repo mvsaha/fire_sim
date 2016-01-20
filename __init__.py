@@ -115,7 +115,7 @@ _KERNEL_DENOMINATOR_ = find_kernel_denominator()  # Calc done on library import
 
 
 @numba.jit(nopython=True)
-def burn_next_active_pixel(fires,active,L,E,A,R,F):
+def burn_next_active_pixel(fires, active, L, E, A, R, F):
     """Apply the Released Energy in a burnt pixel to neighbors.
     
     Arguments
@@ -151,7 +151,19 @@ def burn_next_active_pixel(fires,active,L,E,A,R,F):
                 active[1] += 1
     
     active[0] += 1  # Set the next pixel as 'next'
-    return True
+    return active[0] < active[1]
+
+    
+@numba.jit(nopython=True)
+def burn_next_iteration(fires, active, L, E, A, R, F):
+    """Burn all active pixels in this time iteration (values in F)."""
+    assert fires[0].size and fires[1].size
+    iter_num = F[fires[0][active[0]], fires[1][active[0]]]
+    if iter_num == UNBURNED:  # The cursor is already on an unburnt pixel
+        return False
+    while ( F[fires[0][active[0]], fires[1][active[0]]] == iter_num):
+        burn_next_active_pixel(fires, active, L, E, A, R, F)
+    return active[0] < active[1]
 
 
 @numba.jit(nopython=True)
@@ -193,7 +205,7 @@ def ignite_fires(ignitions, fires, active, L, F):
         n_actual += 1
         fires[0][i+offset] = y
         fires[1][i+offset] = x
-        F[y, x] = True
+        F[y, x] = 1
         active[1] += 1
     return n_actual
 
@@ -217,10 +229,52 @@ def parameterize_truncate_distribution(distr,p1,p2):
     Returns a parameterized distribution that takes one parameter:
         n - The number of samples to draw.
     """
-    def truncated_rng(n):
+    def truncated_rng(n=1):
         """Truncated, parameterized distribution."""
-        x = distr(p1,p2,size=n)
+        x = distr(p1, p2, size=n)
         x[x<0] = 0
         return x
     
     return truncated_rng
+
+
+def visualize(fig, B, L, E, A, R, F, biome_labels=None, landcover_labels=None):
+    import matplotlib.pyplot as plt
+    
+    ax = fig.add_subplot(231)
+    ax.imshow(B); ax.set_title('Biome')
+    if biome_labels is not None:
+        cbar = plt.colorbar(img, orientation='horizontal',
+                      ticks=[i for i in range(len(biome_labels))])
+        cbar.ax.set_xticklabels(biome_labels)
+    
+
+    ax = fig.add_subplot(232)
+    ax.imshow(L); ax.set_title('Land Cover')
+    if biome_labels is not None:
+        cbar=ax.colorbar(img, orientation='horizontal',
+                      ticks=[i for i in range(len(landcover_labels))])
+        cbar.ax.set_xticklabels(landcover_labels)
+
+    fig.add_subplot(233)
+    not_nan = np.isfinite(A)
+    pct = np.percentile(A[not_nan],99)
+    img = ax.imshow(A); ax.set_title('Activation')
+    img.set_clim(0,pct)
+    plt.colorbar(img, orientation='horizontal')
+    
+    fig.add_subplot(234)
+    ax.imshow(R); ax.set_title('Released')
+    cbar=plt.colorbar(img, orientation='horizontal')
+
+    fig.add_subplot(235)
+    _f = np.copy(F).astype(float)
+    _f[L==0] = np.nan
+    img = ax.imshow(_f); ax.set_title('Fires')
+    img.set_clim(0,1)
+    plt.colorbar(img, orientation='horizontal',label='Burn Iteration')
+    
+    fig.add_subplot(236)
+    img = ax.imshow(E); ax.set_title('Energy Accumulated');
+    img.set_clim(0,pct)
+    plt.colorbar(img, orientation='horizontal')
