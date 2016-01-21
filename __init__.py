@@ -58,13 +58,13 @@ def fill_A(L, rngs, A):
             The array to be filled with random activation energies based
             on the land cover component.
     """
-    for lc in range(N_COVERS):
+    for lc in range(len(rngs)):
         y,x = np.where(L==lc)
         if len(y):
             A[y,x] = rngs[lc](y.size)
 
 
-def fill_R(n_covers, L, rngs, R):
+def fill_R(L, rngs, R):
     """Fill the Release Energy map (R) with randomly generated values.
     
     Arguments:
@@ -85,7 +85,7 @@ def fill_R(n_covers, L, rngs, R):
             The array to be filled with random activation energies based
             on the land cover component.
     """
-    fill_A(n_covers,L,rngs,R)  # Same functionality as fill_A
+    fill_A(L, rngs, R)  # Same functionality as fill_A
 
 
 @numba.jit(nopython=True)
@@ -226,16 +226,15 @@ def fire_map_to_list(F, L):
     active = np.array(len(fires[0]), dtype=int)
     return fires, active
 
-def parameterize_distr(distr,p1,p2):
+def parameterize(distr, *p):
     """Parameterize a two-parameter distribution.
     
-    Returns a parameterized distribution that takes one parameter:
-        n - The number of samples to draw.
+    Returns a callable distribution that takes one parameter,
+        n, and returns n random samples.
     """
     def truncated_rng(n=1):
         """Truncated, parameterized distribution."""
-        x = distr(p1, p2, size=n)
-        x[x<0] = 0
+        x = distr(*p, size=n)
         return x
     
     return truncated_rng
