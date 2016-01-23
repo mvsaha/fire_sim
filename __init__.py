@@ -139,13 +139,14 @@ def burn_next_active_pixel(fires, active, L, E, A, R, F):
             
             # Bounds checking (or if this pixel has already been burned)
             if (ix < 0 or ix >= X or (y == iy and x == ix) or
-                 (L[iy,ix] == 0) or F[iy,ix]):
+                 (L[iy,ix] == INFLAMMABLE) or F[iy,ix]):
                 continue
             
             # If we're inside of max radius
             dist = euclidean_distance(y,x,iy,ix)
             if dist <= _MAX_KERNEL_RADIUS_:  # Apply the energy to the neighbor
-                E[iy,ix] +=  R[y,x] * weight_distance(dist)/_KERNEL_DENOMINATOR_
+                E[iy,ix] +=  (R[y,x] * weight_distance(dist) /
+                              _KERNEL_DENOMINATOR_)
             
             # If we've exceeded Activation, add this pixel to the burn list
             if E[iy,ix] > A[iy,ix]:
@@ -200,18 +201,17 @@ def ignite_fires(ignitions, fires, active, L, F):
             Map of burnt and burning pixels.
     """
     N = len(ignitions[0])
-    n_actual = 0
-    offset = active[1]
+    n_added = 0
     for i in range(N):
         y, x = ignitions[0][i], ignitions[1][i]
-        if L[y, x] == BARE or F[y, x]:
+        if L[y, x] == INFLAMMABLE or F[y, x]:
             continue
-        n_actual += 1
-        fires[0][i+offset] = y
-        fires[1][i+offset] = x
+        n_added += 1
+        fires[0][active[1]] = y
+        fires[1][active[1]] = x
         F[y, x] = 1
         active[1] += 1
-    return n_actual
+    return n_added
 
 
 def fire_map_to_list(F, L):
@@ -240,7 +240,7 @@ def parameterize(distr, *p):
     return truncated_rng
 
 
-def visualize(fig, B, L, E, A, R, F, biome_labels=None, landcover_labels=None):
+def visualize(fig, B, L, E, A, R, F, biome_labels=None, lc_labels=None):
     import matplotlib.pyplot as plt
     
     ax = fig.add_subplot(231)
@@ -255,8 +255,8 @@ def visualize(fig, B, L, E, A, R, F, biome_labels=None, landcover_labels=None):
     ax.imshow(L); ax.set_title('Land Cover')
     if biome_labels is not None:
         cbar=ax.colorbar(img, orientation='horizontal',
-                      ticks=[i for i in range(len(landcover_labels))])
-        cbar.ax.set_xticklabels(landcover_labels)
+                      ticks=[i for i in range(len(lc_labels))])
+        cbar.ax.set_xticklabels(lc_labels)
     
     fig.add_subplot(233)
     not_nan = np.isfinite(A)
