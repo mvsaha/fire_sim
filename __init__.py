@@ -139,7 +139,7 @@ def burn_next_active_pixel(fires, active, L, E, A, R, F):
             
             # Bounds checking (or if this pixel has already been burned)
             if (ix < 0 or ix >= X or (y == iy and x == ix) or
-                 (L[iy,ix] == INFLAMMABLE) or F[iy,ix]):
+                 (L[iy,ix] == INFLAMMABLE) or (F[iy,ix]>UNBURNED)):
                 continue
             
             # If we're inside of max radius
@@ -225,6 +225,108 @@ def fire_map_to_list(F, L):
     fires = fires[0][eligible], fires[1][eligible]
     active = np.array(len(fires[0]), dtype=int)
     return fires, active
+
+
+"""A fire simulation."""
+class Simulation:
+    def __init__(self, B, L_distr, A_distr, R_distr):
+        """Build the simulation with B and distributions for L A and R."""
+        
+        # Environmental Fields
+        self.B = B.copy()
+        
+        assert all(len(lc)==len(L_distr[0]) for lc in L_distr)
+        self.L_distr = L_distr
+        
+        self.A_distr = A_distr
+        self.R_distr = R_distr
+        self.L = np.zeros_like(B, dtype=int)
+        
+        # 'Energy' Fields
+        self.E = np.zeros_like(B, dtype=float)
+        self.A = np.zeros_like(B, dtype=float)
+        self.R = np.zeros_like(B, dtype=float)
+        self.F = np.zeros_like(B, dtype=int)
+        
+        # Fires
+        self._fires = np.zeros(B.size,dtype=int), np.zeros(B.size,dtype=int)
+        self.active = np.zeros(2, dtype=int)
+        self.reset()
+    
+    
+    @property
+    def N_BIOMES(self):
+        return len(L_distr)
+    
+    
+    @property
+    def N_LANDCOVERS(self):
+        return len(L_distr[0])
+    
+    
+    def resample_L(self):
+        """Generate new L from the Band landcover distributions."""
+        fill_L(self.B, self.L_distr, self.L)
+        self.inflammable = np.where(L==0)
+    
+    
+    def reset(self):
+        """Generate new random fields for simulation."""
+        self.iterations = 0
+        self.resample_L()
+        self.E[:] = 0.0
+        self.E[self.L==0] = np.nan
+        fill_A(self.L, self.A_distr, self.A)
+        fill_R(self.L, self.R_distr, self.R)
+        self.F[:] = 0
+        self.active[:] = 0, 0
+        self._fires[0][:] = 0
+        self._fires[1][:] = 0
+    
+    
+    def ignite_fires(self, ignitions):
+        assert len(ignitions) == 2 and len(ignitions[0]) == len(ignitions[1])
+        ignitions = np.array(ignitions[0]), np.array(ignitions[1])
+        
+        self.n_ignited = ignite_fires(ignitions, self._fires, self.active, self.L, self.F)
+    
+    
+    def burn_next_pixel(self):
+        return burn_next_active_pixel(self._fires, self.active, self.L,
+                   self.E, self.A, self.R, self.F)
+    
+    
+    def iterate(self):
+        """Burn an iteration of fires."""
+        self.iterations += 1
+        return burn_next_iteration(self._fires, self.active, self.L, self.E,
+                   self.A, self.R, self.F)
+    
+    
+    def run(self, ignitions):
+        """Ignite fires and burn until propagation halts."""
+        self.reset()
+        self.ignite_fires(ignitions)
+        while self.iterate():
+            pass
+    
+    
+    def showF(self):
+        F = self.F.astype(float)
+        F[F==0] = np.nan
+        imshow(F)
+    
+    
+    def nancounts(self):
+        print('E nan',np.sum(np.isnan(self.E)))
+        print('A nan',np.sum(np.isnan(self.A)))
+        print('R nan',np.sum(np.isnan(self.R)))
+    
+    
+    @property
+    def fires(self):
+        return self._fires[0][:self.active[1]], self._fires[1][:self.active[1]]
+
 
 def parameterize(distr, *p):
     """Parameterize a two-parameter distribution.
