@@ -12,6 +12,7 @@ BARE = 0
 INFLAMMABLE = 0
 UNBURNED = 0
 
+
 def fill_L(B, p, L):
     """Fill a LandCover (L) map from a Biome map (B).
     
@@ -227,6 +228,14 @@ def fire_map_to_list(F, L):
     return fires, active
 
 
+@numba.jit(nopython=True)
+def all_in_range(arr, lo, hi):
+    for v in arr:
+        if v < lo or v > hi:
+            return False
+    return True
+
+
 """A fire simulation."""
 class Simulation:
     def __init__(self, B, L_distr, A_distr, R_distr):
@@ -235,7 +244,7 @@ class Simulation:
         # Environmental Fields
         self.B = B.copy()
         
-        assert all(len(lc)==len(L_distr[0]) for lc in L_distr)
+        assert all(len(lc) == len(L_distr[0]) for lc in L_distr)
         self.L_distr = L_distr
         
         self.A_distr = A_distr
@@ -249,25 +258,25 @@ class Simulation:
         self.F = np.zeros_like(B, dtype=int)
         
         # Fires
-        self._fires = np.zeros(B.size,dtype=int), np.zeros(B.size,dtype=int)
+        self._fires = np.zeros(B.size, dtype=int), np.zeros(B.size,dtype=int)
         self.active = np.zeros(2, dtype=int)
         self.reset()
     
     
     @property
     def N_BIOMES(self):
-        return len(L_distr)
+        return len(self.L_distr)
     
     
     @property
     def N_LANDCOVERS(self):
-        return len(L_distr[0])
+        return len(self.L_distr[0])
     
     
     def resample_L(self):
         """Generate new L from the Band landcover distributions."""
         fill_L(self.B, self.L_distr, self.L)
-        self.inflammable = np.where(L==0)
+        self.inflammable = np.where(self.L == 0)
     
     
     def reset(self):
@@ -286,6 +295,8 @@ class Simulation:
     
     def ignite_fires(self, ignitions):
         assert len(ignitions) == 2 and len(ignitions[0]) == len(ignitions[1])
+        assert all_in_range(ignitions[0], 0, self.B.shape[0])
+        assert all_in_range(ignitions[1], 0, self.B.shape[1])
         ignitions = np.array(ignitions[0]), np.array(ignitions[1])
         
         self.n_ignited = ignite_fires(ignitions, self._fires, self.active, self.L, self.F)
@@ -312,15 +323,16 @@ class Simulation:
     
     
     def showF(self):
+        from matplotlib.pyplot import imshow
         F = self.F.astype(float)
         F[F==0] = np.nan
         imshow(F)
     
     
     def nancounts(self):
-        print('E nan',np.sum(np.isnan(self.E)))
-        print('A nan',np.sum(np.isnan(self.A)))
-        print('R nan',np.sum(np.isnan(self.R)))
+        print('E nan', np.sum(np.isnan(self.E)))
+        print('A nan', np.sum(np.isnan(self.A)))
+        print('R nan', np.sum(np.isnan(self.R)))
     
     
     @property
