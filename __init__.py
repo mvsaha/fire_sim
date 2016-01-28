@@ -321,12 +321,34 @@ class Simulation:
         while self.iterate():
             pass
     
-    
-    def showF(self):
+    def show(self, field, ax=None, nan=0):
+        """Show an environmental field"""
         from matplotlib.pyplot import imshow
-        F = self.F.astype(float)
-        F[F==0] = np.nan
-        imshow(F)
+        field = self.field.astype(float)
+        if nan is not None:
+            field[field==nan] = np.nan
+        if ax is None:
+            return imshow(field)
+        else:
+            ax.imshow(field)
+    
+    def showB(self, ax=None):
+        self.show(self.B, ax=ax, nan=0)
+    
+    def showL(self, ax=None):
+        self.show(self.L, ax=ax, nan=0)
+    
+    def showE(self, ax=None):
+        self.show(self.E, ax=ax, nan=0)
+    
+    def showA(self, ax=None):
+        self.show(self.A, ax=ax, nan=0)
+    
+    def showR(self, ax=None):
+        self.show(self.R, ax=ax, nan=0)
+    
+    def showF(self, ax=None):
+        self.show(self.F, ax=ax, nan=0)
     
     
     def nancounts(self):
