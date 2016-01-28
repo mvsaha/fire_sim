@@ -74,14 +74,14 @@ def fill_R(L, rngs, R):
         
         L - 2d numpy.ndarray(int)
             2d map of andcover component type (e.g. bare, grass, etc.)
-
+        
         rngs - tuple(callables)
             A sequence of callable objects (e.g. functions). There should
             be one entry in rngs for each landcover component class. Each
             callable rngs[l] in rngs should take one parameter, an int n,
             and return n random values of R corresponding to the
             landcover l.
-
+        
         A* - 2d numpy.ndarray(int)
             The array to be filled with random activation energies based
             on the land cover component.
@@ -90,9 +90,9 @@ def fill_R(L, rngs, R):
 
 
 @numba.jit(nopython=True)
-def euclidean_distance(y1,x1,y2,x2):
+def euclidean_distance(y1, x1, y2, x2):
     '''Find the Euclidean distance between two points'''
-    return math.sqrt( ((x1-x2)*(x1-x2)) + ((y1-y2)*(y1-y2)) )
+    return math.sqrt( ((x1 - x2) * (x1 - x2)) + ((y1 - y2) * (y1 - y2)) )
 
 
 @numba.jit(nopython=True)
@@ -105,11 +105,11 @@ _MAX_KERNEL_RADIUS_ = 10
 def find_kernel_denominator():
     """Find the denominator so that energy release integrates to 1."""
     total = 0
-    for iy in range(-_MAX_KERNEL_RADIUS_,_MAX_KERNEL_RADIUS_+1):
-        for ix in range(-_MAX_KERNEL_RADIUS_,_MAX_KERNEL_RADIUS_+1):
+    for iy in range(-_MAX_KERNEL_RADIUS_, _MAX_KERNEL_RADIUS_ + 1):
+        for ix in range(-_MAX_KERNEL_RADIUS_, _MAX_KERNEL_RADIUS_ + 1):
             if iy==0 and ix == 0:
                 continue
-            dist = euclidean_distance(0,0,iy,ix)
+            dist = euclidean_distance(0, 0, iy, ix)
             if dist > _MAX_KERNEL_RADIUS_:
                 continue
             total += weight_distance(dist)
@@ -140,20 +140,20 @@ def burn_next_active_pixel(fires, active, L, E, A, R, F):
             
             # Bounds checking (or if this pixel has already been burned)
             if (ix < 0 or ix >= X or (y == iy and x == ix) or
-                 (L[iy,ix] == INFLAMMABLE) or (F[iy,ix]>UNBURNED)):
+                 (L[iy, ix] == INFLAMMABLE) or (F[iy, ix]>UNBURNED)):
                 continue
             
             # If we're inside of max radius
-            dist = euclidean_distance(y,x,iy,ix)
+            dist = euclidean_distance(y, x, iy, ix)
             if dist <= _MAX_KERNEL_RADIUS_:  # Apply the energy to the neighbor
-                E[iy,ix] +=  (R[y,x] * weight_distance(dist) /
+                E[iy, ix] +=  (R[y, x] * weight_distance(dist) /
                               _KERNEL_DENOMINATOR_)
             
             # If we've exceeded Activation, add this pixel to the burn list
-            if E[iy,ix] > A[iy,ix]:
+            if E[iy, ix] > A[iy, ix]:
                 fires[0][active[1]] = iy
                 fires[1][active[1]] = ix
-                F[iy,ix] = fire_time_step + 1
+                F[iy, ix] = fire_time_step + 1
                 active[1] += 1
     
     active[0] += 1  # Set the next pixel as 'next'
@@ -236,8 +236,7 @@ def all_in_range(arr, lo, hi):
     return True
 
 
-"""A fire simulation."""
-class Simulation:
+class Landscape:
     def __init__(self, B, L_distr, A_distr, R_distr):
         """Build the simulation with B and distributions for L A and R."""
         
@@ -319,12 +318,15 @@ class Simulation:
         self.reset()
         self.ignite_fires(ignitions)
         while self.iterate():
-            pass
+            if self.iterations % 100 == 0:
+                print(self.iterations,end='\r')
+        print('DONE')
+    
     
     def show(self, field, ax=None, nan=0):
         """Show an environmental field"""
         from matplotlib.pyplot import imshow
-        field = self.field.astype(float)
+        field = field.astype(float)
         if nan is not None:
             field[field==nan] = np.nan
         if ax is None:
@@ -356,6 +358,8 @@ class Simulation:
         print('A nan', np.sum(np.isnan(self.A)))
         print('R nan', np.sum(np.isnan(self.R)))
     
+    
+    def past_fires
     
     @property
     def fires(self):
