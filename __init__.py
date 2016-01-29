@@ -177,8 +177,10 @@ def burn_all(fires, active, L, E, A, R, F, n=-1):
     """Burn until there are no more active fires."""
     while n and (active[0] != active[1]):
         burn_next_active_pixel(fires, active, L, E, A, R, F)
-        if n: n -= 1
-        else: break
+        if n:
+            n -= 1
+        else:
+            break
     return abs(n)
 
 
@@ -187,7 +189,7 @@ def ignite_fires(ignitions, fires, active, L, F):
     """Add active fires to the simulation.
     
     Parameters:
-        locations - 2-tuple(numpy.ndarray(int))
+        ignitions - 2-tuple(numpy.ndarray(int))
             y,x locations for N ignition points.
         
         fires* - 2-tuple(numpy.ndarray(int))
@@ -195,7 +197,7 @@ def ignite_fires(ignitions, fires, active, L, F):
             be added to the end of this list. cursor will be modified so
             that it points to one past the last new fire added to this list.
         
-        cursor* - numpy.ndarray(int,shape=(2,))
+        active* - numpy.ndarray(int,shape=(2,))
             First and last+1 indices of active fires.
         
         F* - 2d numpy.array(bool)
@@ -357,9 +359,6 @@ class Landscape:
         print('E nan', np.sum(np.isnan(self.E)))
         print('A nan', np.sum(np.isnan(self.A)))
         print('R nan', np.sum(np.isnan(self.R)))
-    
-    
-    def past_fires
     
     @property
     def fires(self):
