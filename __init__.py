@@ -159,7 +159,7 @@ def burn_next_active_pixel(fires, active, L, E, A, R, F):
     active[0] += 1  # Set the next pixel as 'next'
     return active[0] < active[1]
 
-    
+
 @numba.jit(nopython=True)
 def burn_next_iteration(fires, active, L, E, A, R, F):
     """Burn all active pixels in this time iteration (values in F)."""
@@ -419,3 +419,42 @@ def visualize(fig, B, L, E, A, R, F, biome_labels=None, lc_labels=None):
     img = ax.imshow(E); ax.set_title('Energy Accumulated');
     img.set_clim(0,pct)
     plt.colorbar(img, orientation='horizontal')
+
+    
+def get_clamper(bnds):
+        def clamp(val):
+            if val < bnds[0]:
+                return bnds[0]
+            elif val > bnds[1]:
+                return bnds[1]
+            return val
+        return clamp
+
+
+def find_closest_flammable_cells(L, n, pt):
+    """Choose the n flammable cells closest to a point p on map L."""
+    y, x = pt
+    n_found = 0
+    buffer = 2 * int(np.sqrt(n)) + 1
+    clamp_y = get_clamper((0, L.shape[0]))
+    clamp_x = get_clamper((0, L.shape[1]))
+    
+    # Iteratively enlarge the search window if we haven't found enough cells
+    while n_found < n and buffer < max(L.shape) * 2:
+        y0, y1 = clamp_y(y-buffer), clamp_y(y+buffer+1)
+        x0, x1 = clamp_x(x-buffer), clamp_x(x+buffer+1)
+        sub_L = L[y0:y1, x0:x1]
+        y_found, x_found = np.where(sub_L != INFLAMMABLE)
+        y_found = y_found + y0
+        x_found = x_found + x0 # Return to global coords
+        n_found = len(y_found)
+        buffer *= 2
+    
+    if n_found < n:
+        raise Exception('There are not enough flammable pixels in L.')
+    
+    y_dist = y_found - pt[0]
+    x_dist = x_found - pt[1]
+    dist2 = (y_dist ** 2) + (x_dist ** 2)
+    closest = np.argpartition(dist2, n)[:n]
+    return y_found[closest], x_found[closest]
