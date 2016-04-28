@@ -259,9 +259,14 @@ class Landscape:
         self.F = np.zeros_like(B, dtype=int)
         
         # Fires
+        self.past_fires = []
         self._fires = np.zeros(B.size, dtype=int), np.zeros(B.size,dtype=int)
         self.active = np.zeros(2, dtype=int)
         self.reset()
+        
+    @property
+    def shape(self):
+        return self.E.shape
     
     
     @property
@@ -295,17 +300,20 @@ class Landscape:
     
     
     def ignite_fires(self, ignitions):
+        """Set pixels to active fires"""
         assert len(ignitions) == 2 and len(ignitions[0]) == len(ignitions[1])
         assert all_in_range(ignitions[0], 0, self.B.shape[0])
         assert all_in_range(ignitions[1], 0, self.B.shape[1])
         ignitions = np.array(ignitions[0]), np.array(ignitions[1])
-        
         self.n_ignited = ignite_fires(ignitions, self._fires, self.active, self.L, self.F)
     
     
     def burn_next_pixel(self):
-        return burn_next_active_pixel(self._fires, self.active, self.L,
+        ret = burn_next_active_pixel(self._fires, self.active, self.L,
                    self.E, self.A, self.R, self.F)
+        if not ret:
+            self.add_fire_to_past()
+        return ret
     
     
     def iterate(self):
@@ -315,14 +323,19 @@ class Landscape:
                    self.A, self.R, self.F)
     
     
-    def run(self, ignitions):
+    def run(self, ignitions, max_size=None):
         """Ignite fires and burn until propagation halts."""
         self.reset()
         self.ignite_fires(ignitions)
         while self.iterate():
             if self.iterations % 100 == 0:
                 print(self.iterations,end='\r')
+        
         print('DONE')
+    
+    
+    def add_fire_to_past(self):
+        self.past_fires.append(blahb.PixelSet(self.F))
     
     
     def show(self, field, ax=None, nan=0):
@@ -360,6 +373,7 @@ class Landscape:
         print('A nan', np.sum(np.isnan(self.A)))
         print('R nan', np.sum(np.isnan(self.R)))
     
+    
     @property
     def fires(self):
         return self._fires[0][:self.active[1]], self._fires[1][:self.active[1]]
@@ -389,7 +403,7 @@ def visualize(fig, B, L, E, A, R, F, biome_labels=None, lc_labels=None):
                       ticks=[i for i in range(len(biome_labels))])
         cbar.ax.set_xticklabels(biome_labels)
     
-
+    
     ax = fig.add_subplot(232)
     ax.imshow(L); ax.set_title('Land Cover')
     if biome_labels is not None:
@@ -458,3 +472,23 @@ def find_closest_flammable_cells(L, n, pt):
     dist2 = (y_dist ** 2) + (x_dist ** 2)
     closest = np.argpartition(dist2, n)[:n]
     return y_found[closest], x_found[closest]
+
+
+@numba.jit(nopython=True)
+def min_distances(A, B, distances):
+    """Find the minimum distance of each pixel in A to any pixel in B."""
+    assert A[0].size == A[1].size
+    assert B[0].size == B[1].size
+    assert A[0].size > 0 and B[0].size > 0
+    for i in range(A[0].size):
+        distances[i] = euclidean_distance(A[0][i], A[1][i], B[0][0], B[1][0])
+        for j in range(B[0].size):
+            d = euclidean_distance(A[0][i], A[1][i], B[0][j], B[1][j])
+            if d < distances[i]:
+                distances[i] = d
+
+
+def foo():
+    pass
+
+
