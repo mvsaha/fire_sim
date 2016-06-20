@@ -367,7 +367,6 @@ class Landscape:
     def showF(self, ax=None):
         self.show(self.F, ax=ax, nan=0)
     
-    
     def nancounts(self):
         print('E nan', np.sum(np.isnan(self.E)))
         print('A nan', np.sum(np.isnan(self.A)))
@@ -436,13 +435,15 @@ def visualize(fig, B, L, E, A, R, F, biome_labels=None, lc_labels=None):
 
     
 def get_clamper(bnds):
-        def clamp(val):
-            if val < bnds[0]:
-                return bnds[0]
-            elif val > bnds[1]:
-                return bnds[1]
-            return val
-        return clamp
+    
+    @numba.njit
+    def clamp(val):
+        if val < bnds[0]:
+            return bnds[0]
+        elif val > bnds[1]:
+            return bnds[1]
+        return val
+    return clamp
 
 
 def find_closest_flammable_cells(L, n, pt):
@@ -488,7 +489,66 @@ def min_distances(A, B, distances):
                 distances[i] = d
 
 
-def foo():
-    pass
+def read_fire_history(path_to_fire_perims, global_offset_pixels=(0, 0)):
+    """ Read the shapefile with historical burn perimeters.
+    
+    Arguments:
+        path_to_fire_perims - str
+            Location of the shapefile with the historical fires in it
+        
+        global_offset_meters - 2 - tuple
+            Offset in pixel number of our restricted domain
+    
+    Returns:
+        List of Blob objects, each representing burnt pixels of a fire
+    
+    Notes:
+        Required libraries:
+        pyshp (available with pip from pyPI is needed to read the shapefile)
+        blahb (available from the author of the fire_sim library)
+        
+    """
+    import os, blahb, shapefile
+    assert os.path.exists(path_to_fire_perims)
+    
+    sf = shapefile.Reader(path_to_fire_perims)
+    
+    fires = []
+    count = 0
+    for i in range(len(sf.shapes())):
+        year = int(sf.record(i)[0])
+        if year < 2000:
+            continue
+        shp = sf.shape(i)
+        x, y = zip(*shp.points)
+        x = (np.array(x)/10).astype(int) - global_offset_pixels[1]
+        y = (np.array(y)/10).astype(int) - global_offset_pixels[0]
+        
+        fire = blahb.polygon2d(y, x, filled=True)
+        fire.encode({1})
+        fires.append(fire)
+    return fires
 
 
+def centroid(blob):
+    """Average pixel values along each axis."""
+    return np.array([np.mean(blob[0].expanded()),
+                     np.mean(blob[1].expanded())])
+
+
+def skeletonize(blob):
+    """Return the skeleton pixels of the blob."""
+    from skimage.morphology import medial_axis
+    ma = medial_axis(blob.img)
+    y, x = np.where(ma)
+    return y + blob.offset[0], x + blob.offset[1]
+
+def estimate_ignition_point(blob):
+    """Infer ignition point of fire as closest to medial axis point to centroid."""
+    yc, xc = centroid(blob, astype=int)
+    ys, xs = skeletonize(blob)
+    
+    dy, dx = ys - yc, xs - xc
+    
+    closest_idx = np.argmin((dy * dy) + (dx * dx))
+    return np.array([ys[closest_idx], xs[closest_idx]])
